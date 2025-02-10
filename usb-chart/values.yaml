@@ -1,0 +1,72 @@
+global:
+  replicaCounts:
+    cameraUsbMapper:
+      replicaCount: 1
+      namespace: default
+  deviceModel:
+    namespace: default
+    name: camera-usb
+    protocol: camera-usb
+    waitTimes: 500000
+
+  nodeSelectorAndDevPath:
+    pushMethod:
+      fag: true
+      mqtt:
+        flag: true
+        conf:
+          address: 'tcp://192.168.0.103:1883'
+          retained: true
+      http:
+        flag: false
+        conf:
+          hostName: ''
+          port: 0
+          requestPath: '/'
+          timeout: 0
+    mapper:
+#      - edgeNode: "edgenode02"
+#        devPath: '/dev/video0'
+      - edgeNode: "edge3"
+        devPath: '/dev/video0'
+
+
+  images:
+    cameraUsbMapper:
+      repository: september9/usb-camera-mapper
+      tag: v1.0
+      name: usb-camera-mapper
+      pullPolicy: IfNotPresent
+
+  imagePullSecrets: [ ]
+  nameOverride: ""
+  fullnameOverride: ""
+
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: true
+    # Annotations to add to the service account
+    annotations: { }
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+
+  podAnnotations: { }
+  podSecurityContext: { }
+
+  securityContext: { }
+
+  services:
+    cameraUsbMapper:
+      clusterIP:
+        port: 8898
+        serviceName: camerausbmapper-cluster-ip
+      nodePort:
+        port: 32898
+        serviceName: camerausbmapper
+      headless:
+        port: 8898
+        serviceName: camerausbmapper-service
+
+
+

@@ -1,0 +1,585 @@
+---
+# Source: usbmapper-chart/templates/002-mapper-deployment.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: influxdb-configmap
+data:
+  token: "aDSvXfxdjUmVF66qbt-y2-U146cxRdiw_AKUgQNPfWszSrmFQAtyl7IA0pVqua_VuS4_JBZbi3mNCsL3wUA2Ig=="
+---
+# Source: usbmapper-chart/templates/003-influxdb-volume.yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: influxdb-storage
+provisioner: kubernetes.io/no-provisioner
+#volumeBindingMode: WaitForFirstConsumer
+---
+# Source: usbmapper-chart/templates/003-influxdb-volume.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: influxdb-pv-0
+  labels:
+    app: influxdb-pv-0
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
+  hostPath:
+    path: /var/lib/influxdb/data-0
+    type: DirectoryOrCreate
+  storageClassName: influxdb-storage
+---
+# Source: usbmapper-chart/templates/003-influxdb-volume.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: influxdb-data-influxdb-0
+  namespace:  default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  selector:
+    matchLabels:
+      app: influxdb-pv-0
+  storageClassName: influxdb-storage
+  volumeMode: Filesystem
+---
+# Source: usbmapper-chart/templates/002-mapper-deployment.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: camerausbmapper-cluster-ip
+  namespace: default
+  labels:
+    service.kubernetes.io/service-proxy-name: "" #不让kube-proxy代理，交由edgeMesh代理
+spec:
+  ports:
+    - port: 8898
+      targetPort: 8898
+      protocol: TCP
+  selector:
+    app: cameraUsbMapper
+  type: ClusterIP
+---
+# Source: usbmapper-chart/templates/004-influxdb-statefulset.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: influxdb
+  namespace: default
+  labels:
+    service.kubernetes.io/service-proxy-name: "" #不让kube-proxy代理，交由edgeMesh代理
+spec:
+  ports:
+    - name: influxdb
+      port: 8086
+      targetPort: 8086
+      nodePort: 32086
+  selector:
+    app: influxdb
+  type: NodePort
+---
+# Source: usbmapper-chart/templates/004-influxdb-statefulset.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: influxdb-cluster-ip
+  namespace: default
+  labels:
+    service.kubernetes.io/service-proxy-name: "" #不让kube-proxy代理，交由edgeMesh代理
+spec:
+  ports:
+    - port: 8086
+      targetPort: 8086
+      protocol: TCP
+      name: influxdb-cluster-ip
+  selector:
+    app: influxdb
+  type: ClusterIP
+---
+# Source: usbmapper-chart/templates/004-influxdb-statefulset.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: influxdb-service
+  namespace: default
+  labels:
+    service.kubernetes.io/service-proxy-name: "" #不让kube-proxy代理，交由edgeMesh代理
+spec:
+  ports:
+    - port: 8086
+      targetPort: 8086
+      protocol: TCP
+      name: influxdb-service
+  clusterIP: None
+  selector:
+    app: influxdb
+---
+# Source: usbmapper-chart/templates/002-mapper-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: usb-dmi-mapper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cameraUsbMapper
+  template:
+    metadata:
+      labels:
+        app: cameraUsbMapper
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/agent
+                    operator: Exists
+                  - key: edgeNode
+                    operator: In
+                    values:
+                      - "edgenode1"
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - cameraUsbMapper
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+        - name: camerausbmapper
+          image: camerausbmapper:v2.0
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args: ["/kubeedge/main --config-file /kubeedge/config.yaml --v 5"]
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - mountPath: /dev
+              name: usb-dev
+            - name: sock-path
+              mountPath: /etc/kubeedge
+          env:
+            - name: TOKEN
+              valueFrom:
+                configMapKeyRef:
+                  key: token
+                  name: influxdb-configmap
+      volumes:
+        - name: sock-path
+          hostPath:
+            path: /etc/kubeedge
+            type: Directory
+        - name: usb-dev
+          hostPath:
+            path: /dev
+            type: Directory
+      restartPolicy: Always
+---
+# Source: usbmapper-chart/templates/004-influxdb-statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: influxdb
+  name: influxdb
+  namespace: default
+spec:
+  serviceName: influxdb-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: influxdb
+  template:
+    metadata:
+      labels:
+        app: influxdb
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/agent
+                    operator: Exists
+      containers:
+        - image: influxdb:2.1.1
+          name: influxdb
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8086
+              name: influxdb
+          volumeMounts:
+            - mountPath: /var/lib/influxdb2
+              name: influxdb-data
+  volumeClaimTemplates:
+    - metadata:
+        name: influxdb-data
+        namespace: default
+      spec:
+        storageClassName: influxdb-storage
+        accessModes:
+          - ReadWriteOnce
+---
+# Source: usbmapper-chart/templates/007-camera-usb-device-instance.yaml
+apiVersion: devices.kubeedge.io/v1beta1
+kind: Device
+metadata:
+  name: camera-usb-0
+  labels:
+    model: camera-usb
+spec:
+  deviceModelRef:
+    name: camera-usb
+  protocol:
+    protocolName: camera-usb
+    configData:
+      deviceID: 0
+      width: 640
+      height: 480
+      format: 0x56595559
+      serialPort: /dev/video17
+      protocolID: 0
+  nodeName: edgenode1 #pls give your edge node name
+  properties:
+    - name: Framerate
+      desired:
+        value: "30"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Framerate"
+          dataType: float
+      reportToCloud: true
+    - name: Input
+      desired:
+        value: "0"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Input"
+          dataType: int
+      reportToCloud: true
+    - name: BusInfo
+      desired:
+        value: "usb-0000:02:02.0-1"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "BusInfo"
+          dataType: string
+      reportToCloud: true
+    - name: WhiteBalanceTemperatureAuto
+      desired:
+        value: "1"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "White Balance Temperature, Auto"
+          dataType: int
+      reportToCloud: true
+    - name: WhiteBalanceTemperature
+      desired:
+        value: "4650"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "White Balance Temperature"
+          dataType: int
+      reportToCloud: true
+    - name: ExposureAbsolute
+      desired:
+        value: "5"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Exposure (Absolute)"
+          dataType: int
+      reportToCloud: true
+    - name: ExposureAuto
+      desired:
+        value: "0"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Exposure, Auto"
+          dataType: int
+      reportToCloud: true
+    - name: PowerLineFrequency
+      desired:
+        value: "1"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Power Line Frequency"
+          dataType: int
+      reportToCloud: true
+    - name: Sharpness
+      desired:
+        value: "128"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Sharpness"
+          dataType: int
+      reportToCloud: true
+    - name: Contrast
+      desired:
+        value: "128"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Contrast"
+          dataType: int
+      reportToCloud: true
+    - name: Saturation
+      desired:
+        value: "128"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Saturation"
+          dataType: int
+      reportToCloud: true
+    - name: Gain
+      desired:
+        value: "50"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Gain"
+          dataType: int
+      reportToCloud: true
+    - name: Brightness
+      desired:
+        value: "128"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Brightness"
+          dataType: int
+      reportToCloud: true
+    - name: ImageTrigger
+      desired:
+        value: ""
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "ImageTrigger"
+          dataType: string
+      reportToCloud: false
+      pushMethod:
+        dbMethod:
+          influxdb2:
+            influxdb2ClientConfig:
+              bucket: "camera-usb-0"
+              url: http://influxdb-cluster-ip.default.svc.cluster.local:8086
+              org: kubeEdge
+            influxdb2DataConfig:
+              tag:
+                usb-camera-id: camera-usb-0
+              fieldKey: image-value
+              measurement: usb-camera
+---
+# Source: usbmapper-chart/templates/001-camera-usb-device-model.yaml
+apiVersion: devices.kubeedge.io/v1beta1
+kind: DeviceModel
+metadata:
+  name: camera-usb
+  namespace: default
+spec:
+  protocol: camera-usb
+  properties:
+    - name: Framerate
+      description: Framerate
+      type: FLOAT
+      accessMode: ReadWrite
+    - name: Input
+      description: Input
+      type: INT
+      accessMode: ReadOnly
+    - name: BusInfo
+      description: BusInfo
+      type: STRING
+      accessMode: ReadOnly
+    - name: WhiteBalanceTemperature
+      description: White Balance Temperature
+      type: INT
+      accessMode: ReadOnly
+      maximum: "6500"
+      minimum: "2800"
+    - name: WhiteBalanceTemperatureAuto
+      description: White Balance Temperature, Auto
+      type: INT
+      accessMode: ReadWrite
+      maximum: "1"
+      minimum: "0"
+    - name: ExposureAbsolute
+      description: Exposure (Absolute)
+      type: INT
+      accessMode: ReadOnly
+      maximum: "2500"
+      minimum: "5"
+    - name: ExposureAuto
+      description: Exposure, Auto
+      type: INT
+      accessMode: ReadWrite
+      maximum: "3"
+      minimum: "0"
+    - name: PowerLineFrequency
+      description: Power Line Frequency
+      type: INT
+      accessMode: ReadWrite
+      maximum: "2"
+      minimum: "0"
+    - name: Sharpness
+      description: Sharpness
+      type: INT
+      accessMode: ReadWrite
+      maximum: "255"
+      minimum: "1"
+    - name: Contrast
+      description: Contrast
+      type: INT
+      accessMode: ReadWrite
+      maximum: "255"
+      minimum: "1"
+    - name: Saturation
+      description: Saturation
+      type: INT
+      accessMode: ReadWrite
+      maximum: "255"
+      minimum: "1"
+    - name: Gain
+      description: Gain
+      type: INT
+      accessMode: ReadWrite
+      maximum: "100"
+      minimum: "1"
+    - name: Brightness
+      description: Brightness
+      type: INT
+      accessMode: ReadWrite
+      maximum: "255"
+      minimum: "1"
+    - name: ImageTrigger
+      type: STRING
+      accessMode: ReadOnly
+---
+# Source: usbmapper-chart/templates/000-pre-install-hook.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: usb-camera-viewer-sa
+  namespace: default
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade
+    "helm.sh/hook-weight": "-6"
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
+---
+# Source: usbmapper-chart/templates/000-pre-install-hook.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: usb-camera-viewer
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade
+    "helm.sh/hook-weight": "-6"
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list","patch"]
+---
+# Source: usbmapper-chart/templates/000-pre-install-hook.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: usb-camera-viewer-binding
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade
+    "helm.sh/hook-weight": "-6"
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
+subjects:
+  - kind: ServiceAccount
+    name: usb-camera-viewer-sa
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: usb-camera-viewer
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: usbmapper-chart/templates/000-pre-install-hook.yaml
+# templates/pre-install-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pre-install-job
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
+spec:
+  template:
+    spec:
+      serviceAccountName: usb-camera-viewer-sa
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/agent
+                    operator: DoesNotExist
+      hostPID: true
+      containers:
+        - name: pre-install-container
+          image: bitnami/kubectl
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - |
+              kubectl label nodes edgenode1  edgeNode=edgenode1 --overwrite
+              
+          securityContext:
+            privileged: true  # 设置容器为特权容器，以便执行 hostPID 操作
+      restartPolicy: OnFailure
