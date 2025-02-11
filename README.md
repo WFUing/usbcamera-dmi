@@ -44,3 +44,5 @@ helm uninstall usb-release
 
 
 v4l2-ctl --device=/dev/video0 --list-ctrls
+
+helm template usb-release ./usb-chart

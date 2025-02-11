@@ -78,6 +78,6 @@ spec:
       accessMode: ReadWrite
       maximum: "127"
       minimum: "-127"
-{{/*    - name: ImageTrigger*/}}
-{{/*      type: STRING*/}}
-{{/*      accessMode: ReadOnly*/}}
+    - name: ImageTrigger
+      type: STRING
+      accessMode: ReadOnly

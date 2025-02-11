@@ -179,18 +179,18 @@ spec:
           featureName: "Brightness"
           dataType: int
       reportToCloud: true
-{{/*    - name: ImageTrigger*/}}
-{{/*      desired:*/}}
-{{/*        value: ""*/}}
-{{/*        metadata:*/}}
-{{/*          timestamp: '1550049403598'*/}}
-{{/*      visitors:*/}}
-{{/*        protocolName: {{ $.Values.global.deviceModel.protocol }}*/}}
-{{/*        configData:*/}}
-{{/*          featureName: "ImageTrigger"*/}}
-{{/*          dataType: string*/}}
-{{/*      reportToCloud: false*/}}
-{{/*      {{- if $.Values.global.nodeSelectorAndDevPath.pushMethod.fag }}*/}}
+    - name: ImageTrigger
+      desired:
+        value: ""
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: {{ $.Values.global.deviceModel.protocol }}
+        configData:
+          featureName: "ImageTrigger"
+          dataType: string
+      reportToCloud: false
+      {{- if $.Values.global.nodeSelectorAndDevPath.pushMethod.fag }}
       pushMethod:
       {{- if  $.Values.global.nodeSelectorAndDevPath.pushMethod.mqtt.flag  }}
         mqtt:
@@ -205,5 +205,5 @@ spec:
 {{/*          {{- toYaml . | nindent 10}}*/}}
 {{/*          {{- end}}*/}}
 {{/*      {{- end}}*/}}
-{{/*      {{- end}}*/}}
+      {{- end}}
 {{- end }}

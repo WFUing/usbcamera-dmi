@@ -1,0 +1,373 @@
+---
+# Source: usb-chart/templates/002-mapper-deployment.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: camerausbmapper-cluster-ip
+  namespace: default
+  labels:
+    service.kubernetes.io/service-proxy-name: "" #不让kube-proxy代理，交由edgeMesh代理
+spec:
+  ports:
+    - port: 8898
+      targetPort: 8898
+      protocol: TCP
+  selector:
+    app: cameraUsbMapper
+  type: ClusterIP
+---
+# Source: usb-chart/templates/002-mapper-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: usb-dmi-mapper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cameraUsbMapper
+  template:
+    metadata:
+      labels:
+        app: cameraUsbMapper
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/agent
+                    operator: Exists
+                  - key: edgeNode
+                    operator: In
+                    values:
+                      - "edge3"
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - cameraUsbMapper
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+        - name: usb-camera-mapper
+          image: september9/usb-camera-mapper:v1.0
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args: ["/kubeedge/main --config-file /kubeedge/config.yaml --v 5"]
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - mountPath: /dev
+              name: usb-dev
+            - name: sock-path
+              mountPath: /etc/kubeedge
+      volumes:
+        - name: sock-path
+          hostPath:
+            path: /etc/kubeedge
+            type: Directory
+        - name: usb-dev
+          hostPath:
+            path: /dev
+            type: Directory
+      restartPolicy: Always
+---
+# Source: usb-chart/templates/007-camera-usb-device-instance.yaml
+apiVersion: devices.kubeedge.io/v1beta1
+kind: Device
+metadata:
+  name: camera-usb-0
+  labels:
+    model: camera-usb
+spec:
+  deviceModelRef:
+    name: camera-usb
+  protocol:
+    protocolName: camera-usb
+    configData:
+      deviceID: 0
+      width: 640
+      height: 480
+      format: 0x56595559
+      serialPort: /dev/video0
+      protocolID: 0
+  nodeName: edge3 #pls give your edge node name
+  properties:
+    - name: Framerate
+      desired:
+        value: "1"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Framerate"
+          dataType: float
+      reportToCloud: true
+    - name: Input
+      desired:
+        value: "0"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Input"
+          dataType: int
+      reportToCloud: true
+    - name: BusInfo
+      desired:
+        value: "usb-0000:02:02.0-1"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "BusInfo"
+          dataType: string
+      reportToCloud: true
+    - name: WhiteBalanceTemperature
+      desired:
+        value: "4650"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "White Balance Temperature"
+          dataType: int
+      reportToCloud: true
+    - name: ExposureAuto
+      desired:
+        value: "0"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Exposure, Auto"
+          dataType: int
+      reportToCloud: true
+    - name: PowerLineFrequency
+      desired:
+        value: "1"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Power Line Frequency"
+          dataType: int
+      reportToCloud: true
+    - name: Sharpness
+      desired:
+        value: "128"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Sharpness"
+          dataType: int
+      reportToCloud: true
+    - name: Contrast
+      desired:
+        value: "128"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Contrast"
+          dataType: int
+      reportToCloud: true
+    - name: Saturation
+      desired:
+        value: "128"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Saturation"
+          dataType: int
+      reportToCloud: true
+    - name: Gain
+      desired:
+        value: "50"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Gain"
+          dataType: int
+      reportToCloud: true
+    - name: Brightness
+      desired:
+        value: "128"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Brightness"
+          dataType: int
+      reportToCloud: true
+      pushMethod:
+        mqtt:
+          topic: "camera-usb-0"
+          address: tcp://192.168.0.103:1883
+          retained: true
+---
+# Source: usb-chart/templates/001-camera-usb-device-model.yaml
+apiVersion: devices.kubeedge.io/v1beta1
+kind: DeviceModel
+metadata:
+  name: camera-usb
+  namespace: default
+spec:
+  protocol: camera-usb
+  properties:
+    - name: Framerate
+      description: Framerate
+      type: FLOAT
+      accessMode: ReadWrite
+    - name: Input
+      description: Input
+      type: INT
+      accessMode: ReadOnly
+    - name: BusInfo
+      description: BusInfo
+      type: STRING
+      accessMode: ReadOnly
+    - name: WhiteBalanceTemperature
+      description: White Balance Temperature
+      type: INT
+      accessMode: ReadOnly
+      maximum: "6500"
+      minimum: "0"
+    - name: ExposureAuto
+      description: Exposure, Auto
+      type: INT
+      accessMode: ReadWrite
+      maximum: "3"
+      minimum: "0"
+    - name: PowerLineFrequency
+      description: Power Line Frequency
+      type: INT
+      accessMode: ReadWrite
+      maximum: "2"
+      minimum: "0"
+    - name: Sharpness
+      description: Sharpness
+      type: INT
+      accessMode: ReadWrite
+      maximum: "256"
+      minimum: "0"
+    - name: Contrast
+      description: Contrast
+      type: INT
+      accessMode: ReadWrite
+      maximum: "511"
+      minimum: "0"
+    - name: Saturation
+      description: Saturation
+      type: INT
+      accessMode: ReadWrite
+      maximum: "511"
+      minimum: "0"
+    - name: Gain
+      description: Gain
+      type: INT
+      accessMode: ReadWrite
+      maximum: "7"
+      minimum: "1"
+    - name: Brightness
+      description: Brightness
+      type: INT
+      accessMode: ReadWrite
+      maximum: "127"
+      minimum: "-127"
+---
+# Source: usb-chart/templates/000-pre-install-hook.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: usb-camera-viewer-sa
+  namespace: default
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade
+    "helm.sh/hook-weight": "-6"
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
+---
+# Source: usb-chart/templates/000-pre-install-hook.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: usb-camera-viewer
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade
+    "helm.sh/hook-weight": "-6"
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list","patch"]
+---
+# Source: usb-chart/templates/000-pre-install-hook.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: usb-camera-viewer-binding
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade
+    "helm.sh/hook-weight": "-6"
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
+subjects:
+  - kind: ServiceAccount
+    name: usb-camera-viewer-sa
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: usb-camera-viewer
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: usb-chart/templates/000-pre-install-hook.yaml
+# templates/pre-install-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pre-install-job
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
+spec:
+  template:
+    spec:
+      serviceAccountName: usb-camera-viewer-sa
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/agent
+                    operator: DoesNotExist
+      hostPID: true
+      containers:
+        - name: pre-install-container
+          image: bitnami/kubectl
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - |
+              kubectl label nodes edge3  edgeNode=edge3 --overwrite
+
+          securityContext:
+            privileged: true  # 设置容器为特权容器，以便执行 hostPID 操作
+      restartPolicy: OnFailure
