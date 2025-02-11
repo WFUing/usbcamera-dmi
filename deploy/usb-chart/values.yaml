@@ -34,7 +34,7 @@ global:
   images:
     cameraUsbMapper:
       repository: september9/usb-camera-mapper
-      tag: v1.0
+      tag: v1.2
       name: usb-camera-mapper
       pullPolicy: IfNotPresent
 
@@ -59,10 +59,10 @@ global:
   services:
     cameraUsbMapper:
       clusterIP:
-        port: 8898
+        port: 7777
         serviceName: camerausbmapper-cluster-ip
       nodePort:
-        port: 32898
+        port: 30077
         serviceName: camerausbmapper
       headless:
         port: 8898

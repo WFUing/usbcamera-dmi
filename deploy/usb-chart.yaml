@@ -1,22 +1,5 @@
 ---
 # Source: usb-chart/templates/002-mapper-deployment.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: camerausbmapper-cluster-ip
-  namespace: default
-  labels:
-    service.kubernetes.io/service-proxy-name: "" #不让kube-proxy代理，交由edgeMesh代理
-spec:
-  ports:
-    - port: 8898
-      targetPort: 8898
-      protocol: TCP
-  selector:
-    app: cameraUsbMapper
-  type: ClusterIP
----
-# Source: usb-chart/templates/002-mapper-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -31,6 +14,7 @@ spec:
       labels:
         app: cameraUsbMapper
     spec:
+      hostNetwork: true
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -53,7 +37,7 @@ spec:
               topologyKey: "kubernetes.io/hostname"
       containers:
         - name: usb-camera-mapper
-          image: september9/usb-camera-mapper:v1.0
+          image: september9/usb-camera-mapper:v1.2
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "-c"]
           args: ["/kubeedge/main --config-file /kubeedge/config.yaml --v 5"]
@@ -129,6 +113,17 @@ spec:
           featureName: "BusInfo"
           dataType: string
       reportToCloud: true
+
+
+
+
+
+
+
+
+
+
+
     - name: WhiteBalanceTemperature
       desired:
         value: "4650"
@@ -140,6 +135,17 @@ spec:
           featureName: "White Balance Temperature"
           dataType: int
       reportToCloud: true
+
+
+
+
+
+
+
+
+
+
+
     - name: ExposureAuto
       desired:
         value: "0"
@@ -217,6 +223,17 @@ spec:
           featureName: "Brightness"
           dataType: int
       reportToCloud: true
+    - name: ImageTrigger
+      desired:
+        value: ""
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "ImageTrigger"
+          dataType: string
+      reportToCloud: false
       pushMethod:
         mqtt:
           topic: "camera-usb-0"
@@ -250,6 +267,18 @@ spec:
       accessMode: ReadOnly
       maximum: "6500"
       minimum: "0"
+
+
+
+
+
+
+
+
+
+
+
+
     - name: ExposureAuto
       description: Exposure, Auto
       type: INT
@@ -292,8 +321,11 @@ spec:
       accessMode: ReadWrite
       maximum: "127"
       minimum: "-127"
+    - name: ImageTrigger
+      type: STRING
+      accessMode: ReadOnly
 ---
-# Source: usb-chart/templates/000-pre-install-hook.yaml
+# Source: usb-chart/templates/00-pre-install-hook.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -304,7 +336,7 @@ metadata:
     "helm.sh/hook-weight": "-6"
     "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
 ---
-# Source: usb-chart/templates/000-pre-install-hook.yaml
+# Source: usb-chart/templates/00-pre-install-hook.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -318,7 +350,7 @@ rules:
     resources: ["nodes"]
     verbs: ["get", "list","patch"]
 ---
-# Source: usb-chart/templates/000-pre-install-hook.yaml
+# Source: usb-chart/templates/00-pre-install-hook.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -336,7 +368,7 @@ roleRef:
   name: usb-camera-viewer
   apiGroup: rbac.authorization.k8s.io
 ---
-# Source: usb-chart/templates/000-pre-install-hook.yaml
+# Source: usb-chart/templates/00-pre-install-hook.yaml
 # templates/pre-install-job.yaml
 apiVersion: batch/v1
 kind: Job
@@ -371,3 +403,6 @@ spec:
           securityContext:
             privileged: true  # 设置容器为特权容器，以便执行 hostPID 操作
       restartPolicy: OnFailure
+
+
+

@@ -1,10 +1,11 @@
 ---
+# Source: usb-chart/templates/002-mapper-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: usb-dmi-mapper
 spec:
-  replicas: {{ $.Values.global.replicaCounts.cameraUsbMapper.replicaCount }}
+  replicas: 1
   selector:
     matchLabels:
       app: cameraUsbMapper
@@ -13,6 +14,7 @@ spec:
       labels:
         app: cameraUsbMapper
     spec:
+      hostNetwork: true
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -20,14 +22,10 @@ spec:
               - matchExpressions:
                   - key: node-role.kubernetes.io/agent
                     operator: Exists
-                  {{- if gt (len .Values.global.nodeSelectorAndDevPath.mapper)  0 }}
                   - key: edgeNode
                     operator: In
                     values:
-                    {{- range .Values.global.nodeSelectorAndDevPath.mapper }}
-                      - {{ .edgeNode | quote }}
-                    {{- end }}
-                  {{- end}}
+                      - "edge3"
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
@@ -38,9 +36,9 @@ spec:
                       - cameraUsbMapper
               topologyKey: "kubernetes.io/hostname"
       containers:
-        - name: {{ .Values.global.images.cameraUsbMapper.name }}
-          image: {{ .Values.global.images.cameraUsbMapper.repository }}:{{ .Values.global.images.cameraUsbMapper.tag }}
-          imagePullPolicy: {{ .Values.global.images.cameraUsbMapper.pullPolicy }}
+        - name: usb-camera-mapper
+          image: september9/usb-camera-mapper:v1.2
+          imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "-c"]
           args: ["/kubeedge/main --config-file /kubeedge/config.yaml --v 5"]
           securityContext:
@@ -60,22 +58,3 @@ spec:
             path: /dev
             type: Directory
       restartPolicy: Always
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ .Values.global.services.cameraUsbMapper.clusterIP.serviceName }}
-  namespace: {{ .Values.global.replicaCounts.cameraUsbMapper.namespace }}
-  labels:
-    service.kubernetes.io/service-proxy-name: "" #不让kube-proxy代理，交由edgeMesh代理
-spec:
-  ports:
-    - port: {{ .Values.global.services.cameraUsbMapper.clusterIP.port }}
-      targetPort: 8898
-      protocol: TCP
-  selector:
-    app: cameraUsbMapper
-  type: ClusterIP
-
-
-

@@ -1,0 +1,73 @@
+---
+# Source: usb-chart/templates/001-camera-usb-device-model.yaml
+apiVersion: devices.kubeedge.io/v1beta1
+kind: DeviceModel
+metadata:
+  name: camera-usb
+  namespace: default
+spec:
+  protocol: camera-usb
+  properties:
+    - name: Framerate
+      description: Framerate
+      type: FLOAT
+      accessMode: ReadWrite
+    - name: Input
+      description: Input
+      type: INT
+      accessMode: ReadOnly
+    - name: BusInfo
+      description: BusInfo
+      type: STRING
+      accessMode: ReadOnly
+    - name: WhiteBalanceTemperature
+      description: White Balance Temperature
+      type: INT
+      accessMode: ReadOnly
+      maximum: "6500"
+      minimum: "0"
+    - name: ExposureAuto
+      description: Exposure, Auto
+      type: INT
+      accessMode: ReadWrite
+      maximum: "3"
+      minimum: "0"
+    - name: PowerLineFrequency
+      description: Power Line Frequency
+      type: INT
+      accessMode: ReadWrite
+      maximum: "2"
+      minimum: "0"
+    - name: Sharpness
+      description: Sharpness
+      type: INT
+      accessMode: ReadWrite
+      maximum: "256"
+      minimum: "0"
+    - name: Contrast
+      description: Contrast
+      type: INT
+      accessMode: ReadWrite
+      maximum: "511"
+      minimum: "0"
+    - name: Saturation
+      description: Saturation
+      type: INT
+      accessMode: ReadWrite
+      maximum: "511"
+      minimum: "0"
+    - name: Gain
+      description: Gain
+      type: INT
+      accessMode: ReadWrite
+      maximum: "7"
+      minimum: "1"
+    - name: Brightness
+      description: Brightness
+      type: INT
+      accessMode: ReadWrite
+      maximum: "127"
+      minimum: "-127"
+    - name: ImageTrigger
+      type: STRING
+      accessMode: ReadOnly

@@ -1,0 +1,159 @@
+---
+# Source: usb-chart/templates/007-camera-usb-device-instance.yaml
+apiVersion: devices.kubeedge.io/v1beta1
+kind: Device
+metadata:
+  name: camera-usb-0
+  labels:
+    model: camera-usb
+spec:
+  deviceModelRef:
+    name: camera-usb
+  protocol:
+    protocolName: camera-usb
+    configData:
+      deviceID: 0
+      width: 640
+      height: 480
+      format: 0x56595559
+      serialPort: /dev/video0
+      protocolID: 0
+  nodeName: edge3 #pls give your edge node name
+  properties:
+    - name: Framerate
+      desired:
+        value: "1"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Framerate"
+          dataType: float
+      reportToCloud: true
+    - name: Input
+      desired:
+        value: "0"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Input"
+          dataType: int
+      reportToCloud: true
+    - name: BusInfo
+      desired:
+        value: "usb-0000:02:02.0-1"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "BusInfo"
+          dataType: string
+      reportToCloud: true
+    - name: WhiteBalanceTemperature
+      desired:
+        value: "4650"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "White Balance Temperature"
+          dataType: int
+      reportToCloud: true
+    - name: ExposureAuto
+      desired:
+        value: "0"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Exposure, Auto"
+          dataType: int
+      reportToCloud: true
+    - name: PowerLineFrequency
+      desired:
+        value: "1"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Power Line Frequency"
+          dataType: int
+      reportToCloud: true
+    - name: Sharpness
+      desired:
+        value: "128"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Sharpness"
+          dataType: int
+      reportToCloud: true
+    - name: Contrast
+      desired:
+        value: "128"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Contrast"
+          dataType: int
+      reportToCloud: true
+    - name: Saturation
+      desired:
+        value: "128"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Saturation"
+          dataType: int
+      reportToCloud: true
+    - name: Gain
+      desired:
+        value: "50"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Gain"
+          dataType: int
+      reportToCloud: true
+    - name: Brightness
+      desired:
+        value: "128"
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "Brightness"
+          dataType: int
+      reportToCloud: true
+    - name: ImageTrigger
+      desired:
+        value: ""
+        metadata:
+          timestamp: '1550049403598'
+      visitors:
+        protocolName: camera-usb
+        configData:
+          featureName: "ImageTrigger"
+          dataType: string
+      reportToCloud: false
+      pushMethod:
+        mqtt:
+          topic: "camera-usb-0"
+          address: tcp://192.168.0.103:1883
+          retained: true

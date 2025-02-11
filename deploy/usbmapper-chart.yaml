@@ -505,7 +505,7 @@ spec:
       type: STRING
       accessMode: ReadOnly
 ---
-# Source: usbmapper-chart/templates/000-pre-install-hook.yaml
+# Source: usbmapper-chart/templates/00-pre-install-hook.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -516,7 +516,7 @@ metadata:
     "helm.sh/hook-weight": "-6"
     "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
 ---
-# Source: usbmapper-chart/templates/000-pre-install-hook.yaml
+# Source: usbmapper-chart/templates/00-pre-install-hook.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -530,7 +530,7 @@ rules:
     resources: ["nodes"]
     verbs: ["get", "list","patch"]
 ---
-# Source: usbmapper-chart/templates/000-pre-install-hook.yaml
+# Source: usbmapper-chart/templates/00-pre-install-hook.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -548,7 +548,7 @@ roleRef:
   name: usb-camera-viewer
   apiGroup: rbac.authorization.k8s.io
 ---
-# Source: usbmapper-chart/templates/000-pre-install-hook.yaml
+# Source: usbmapper-chart/templates/00-pre-install-hook.yaml
 # templates/pre-install-job.yaml
 apiVersion: batch/v1
 kind: Job
