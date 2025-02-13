@@ -180,6 +180,7 @@ spec:
           dataType: int
       reportToCloud: true
     - name: ImageTrigger
+      reportCycle: {{ $.Values.global.nodeSelectorAndDevPath.reportCycle }}
       desired:
         value: ""
         metadata:

@@ -5,12 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9e5681bf-fc96-46af-a44f-258fbe41aa0d" name="Changes" comment="feat(*): add usb-chart">
-      <change afterPath="$PROJECT_DIR$/demo1.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/usb-chart-0.1.0.tgz" beforeDir="false" afterPath="$PROJECT_DIR$/usb-chart-0.1.0.tgz" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/usb-chart/templates/001-camera-usb-device-model.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/usb-chart/templates/001-camera-usb-device-model.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/usb-chart/templates/007-camera-usb-device-instance.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/usb-chart/templates/007-camera-usb-device-instance.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/deploy/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/deploy/usb-chart-0.1.0.tgz" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/deploy/usb-chart/templates/007-camera-usb-device-instance.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/deploy/usb-chart/templates/007-camera-usb-device-instance.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/deploy/usb-chart/values.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/deploy/usb-chart/values.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -66,6 +65,7 @@
       <recent name="$PROJECT_DIR$" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/deploy" />
       <recent name="$PROJECT_DIR$" />
     </key>
   </component>
@@ -79,7 +79,9 @@
       <method v="2" />
     </configuration>
     <configuration default="true" type="docker-deploy" factoryName="dockerfile" temporary="true">
-      <deployment type="dockerfile" />
+      <deployment type="dockerfile">
+        <settings />
+      </deployment>
       <method v="2" />
     </configuration>
     <recent_temporary>

@@ -10,6 +10,7 @@ global:
     waitTimes: 500000
 
   nodeSelectorAndDevPath:
+    reportCycle: 20000000000
     pushMethod:
       fag: true
       mqtt:

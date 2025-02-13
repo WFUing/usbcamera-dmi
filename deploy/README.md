@@ -20,11 +20,12 @@ helm list
 
 helm template usbmapper-release ./usbmapper-chart
 
-
+```
 kubectl delete clusterrole usb-camera-viewer
 kubectl delete clusterrolebinding usb-camera-viewer-binding
 kubectl delete serviceaccount usb-camera-viewer-sa -n default
 kubectl delete job pre-install-job -n default
+```
 
 
 helm lint usb-chart
@@ -58,10 +59,11 @@ lsof -i :7777
 
 ss -tulnp | grep 7777
 
+```
 curl http://localhost:7777/api/v1/ping
 curl http://192.168.0.103:30077/api/v1/ping
 curl http://localhost:30077/api/v1/device/camera-usb-0/Framerate
-
+```
 
 kubectl run curlpod --image=radial/busyboxplus:curl -i --tty --rm
 
